@@ -1,30 +1,162 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Best Wishes for Suma</title>
-  <style>
-    body {
-      background-color: #410c0c;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 150px;
-    }
-    
-    h1 {
-      color: #008000;
-      font-size: 36px;
-      margin-bottom: 20px;
-    }
-    
-    p {
-      color: #db9c12;
-      font-size: 24px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Best Wishes for Suma</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the canvas to ensure it covers the background */
+        body {
+            overflow: hidden; /* Prevent scrollbars due to canvas */
+            font-family: 'Inter', sans-serif; /* Use Inter font */
+        }
+        #artCanvas {
+            position: fixed; /* Position canvas behind content */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; /* Ensure it's in the background */
+            display: block;
+        }
+        /* Ensure text is above the canvas */
+        .content-container {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
 </head>
-<body>
-  <h1>Best Wishes for Suma</h1>
-  <p>Good luck, Suma, on your exam! You've got this   - From your brother & sister!</p>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen">
+    <!-- Canvas for the fractal and geometric art -->
+    <canvas id="artCanvas"></canvas>
+
+    <!-- Content container for the message -->
+    <div class="content-container bg-white bg-opacity-10 p-8 md:p-12 rounded-3xl shadow-2xl backdrop-blur-sm transform transition-all duration-500 hover:scale-105">
+        <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 mb-4 animate-pulse">
+            Best Wishes for Suma
+        </h1>
+        <p class="text-xl md:text-3xl text-yellow-300 font-semibold leading-relaxed">
+            Good luck, Suma, on your exam! You've got this<br>
+            <span class="text-green-400 text-lg md:text-2xl">- From your brother & sister!</span>
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        // Function to resize canvas to fill the window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            // Only redraw if an animation frame is not already requested
+            if (!animationFrameId) {
+                drawArt(); // Redraw art on resize
+            }
+        }
+
+        // Function to draw a recursive fractal tree
+        function drawTree(x1, y1, length, angle, depth, maxDepth, hueOffset) {
+            if (depth > maxDepth) return;
+
+            const x2 = x1 + length * Math.cos(angle);
+            const y2 = y1 + length * Math.sin(angle);
+
+            // Calculate color based on depth and hueOffset
+            const hue = (depth * 20 + hueOffset) % 360;
+            const saturation = 70 + (depth * 5);
+            const lightness = 40 + (depth * 3);
+            ctx.strokeStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            ctx.lineWidth = Math.max(1, (maxDepth - depth + 1) * 1.5);
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            // Recursive calls for branches
+            const branchAngle1 = angle - Math.PI / 6 + (Math.sin(Date.now() * 0.0005 + depth) * 0.1);
+            const branchAngle2 = angle + Math.PI / 6 + (Math.cos(Date.now() * 0.0005 + depth) * 0.1);
+            const branchLength = length * 0.75;
+
+            drawTree(x2, y2, branchLength, branchAngle1, depth + 1, maxDepth, hueOffset);
+            drawTree(x2, y2, branchLength, branchAngle2, depth + 1, maxDepth, hueOffset);
+        }
+
+        // Array to hold animated geometric shapes (circles)
+        const geometricShapes = [];
+        const numShapes = 30;
+
+        // Initialize geometric shapes
+        function initGeometricShapes() {
+            for (let i = 0; i < numShapes; i++) {
+                geometricShapes.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 5 + 2, // Base radius
+                    speedX: (Math.random() - 0.5) * 2,
+                    speedY: (Math.random() - 0.5) * 2,
+                    colorHue: Math.random() * 360,
+                    opacity: Math.random() * 0.5 + 0.2,
+                    phase: Math.random() * Math.PI * 2 // For pulsating effect
+                });
+            }
+        }
+
+        // Function to draw and update geometric shapes
+        function drawGeometricShapes() {
+            geometricShapes.forEach(shape => {
+                // Update position
+                shape.x += shape.speedX;
+                shape.y += shape.speedY;
+
+                // Bounce off walls
+                if (shape.x + shape.radius > canvas.width || shape.x - shape.radius < 0) {
+                    shape.speedX *= -1;
+                }
+                if (shape.y + shape.radius > canvas.height || shape.y - shape.radius < 0) {
+                    shape.speedY *= -1;
+                }
+
+                // Pulsating effect for radius, ensuring it's always positive
+                // Math.max(1, ...) ensures a minimum radius of 1 to prevent negative values
+                const currentRadius = Math.max(1, shape.radius + Math.sin(shape.phase + Date.now() * 0.002) * 3);
+                shape.phase += 0.01;
+
+                // Draw shape
+                ctx.beginPath();
+                ctx.arc(shape.x, shape.y, currentRadius, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${shape.colorHue}, 80%, 60%, ${shape.opacity})`;
+                ctx.fill();
+            });
+        }
+
+        // Main drawing function
+        function drawArt() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas each frame
+
+            // Draw the fractal tree
+            const initialLength = canvas.height / 5;
+            const maxDepth = 8;
+            const hueOffset = Date.now() * 0.02; // Animate hue
+            drawTree(canvas.width / 2, canvas.height, initialLength, -Math.PI / 2, 0, maxDepth, hueOffset);
+
+            // Draw animated geometric shapes
+            drawGeometricShapes();
+
+            animationFrameId = requestAnimationFrame(drawArt); // Loop the animation
+        }
+
+        // Event listeners
+        window.addEventListener('resize', resizeCanvas);
+        window.onload = function() {
+            resizeCanvas(); // Initial resize and draw
+            initGeometricShapes(); // Initialize shapes after canvas is sized
+        };
+    </script>
 </body>
 </html>
- 
